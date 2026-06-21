@@ -33,4 +33,10 @@ void launch_batched_gemm(
     cudaStream_t stream = nullptr
 );
 
+// Linear with fp32 output: C[M,N] = A[M,K] @ B[K,N]  (A,B bf16; C fp32).
+// Used for the LM head (hidden -> vocab logits).
+void launch_linear_f32(
+    const void* A, const void* B, float* C,
+    int M, int N, int K, cudaStream_t stream = nullptr);
+
 }} // namespace sparkinfer::kernels

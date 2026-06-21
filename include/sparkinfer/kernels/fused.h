@@ -13,4 +13,14 @@ void launch_add_rmsnorm(const void* x_bf16, const void* residual_bf16,
                         const void* weight_bf16, void* out_bf16,
                         int rows, int cols, float eps, cudaStream_t stream = nullptr);
 
+// Token embedding gather: out[t,:] = table[ids[t],:]  (bf16).
+//   ids: [n_tokens] (int32), table: [vocab, hidden], out: [n_tokens, hidden]
+void launch_embedding(const int* ids, const void* table, void* out,
+                      int n_tokens, int hidden, cudaStream_t stream = nullptr);
+
+// Greedy argmax over each row of logits.  logits: [n_rows, vocab] (fp32),
+// out_id: [n_rows] (int32).
+void launch_argmax(const float* logits, int* out_id, int n_rows, int vocab,
+                   cudaStream_t stream = nullptr);
+
 }} // namespace sparkinfer::kernels

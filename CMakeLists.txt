@@ -8,7 +8,7 @@ set(CMAKE_CUDA_STANDARD 17)
 # Also: sm_100 = datacenter Blackwell (B200/GB200), sm_90 = Hopper, sm_89 = Ada.
 # NOTE: RTX 5090 is compute capability 12.0 (sm_120), NOT sm_100. sm_100 is
 # datacenter Blackwell (B200) and is binary-incompatible with the 5090.
-set(CMAKE_CUDA_ARCHITECTURES "89;90;100;120" CACHE STRING "CUDA architectures")
+set(CMAKE_CUDA_ARCHITECTURES "89;90;100;120;121" CACHE STRING "CUDA architectures")
 
 option(BUILD_TESTS         "Build unit tests"            ON)
 option(BUILD_BENCHMARKS    "Build benchmarks"            OFF)
