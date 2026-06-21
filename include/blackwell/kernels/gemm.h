@@ -1,0 +1,36 @@
+#pragma once
+#include <cuda_runtime.h>
+
+namespace blackwell { namespace kernels {
+
+enum class GemmLayout { ROW_MAJOR, COL_MAJOR };
+enum class GemmPrecision { FP16, BF16, FP8_E4M3, INT8 };
+
+struct GemmConfig {
+    GemmPrecision precision = GemmPrecision::BF16;
+    GemmLayout    layout_a  = GemmLayout::ROW_MAJOR;
+    GemmLayout    layout_b  = GemmLayout::COL_MAJOR;
+    bool          use_tensor_cores = true;
+    int           split_k = 1;
+};
+
+// C = alpha * A @ B + beta * C
+// A: [M, K], B: [K, N], C: [M, N]
+void launch_gemm(
+    const void* A, const void* B, void* C,
+    int M, int N, int K,
+    float alpha, float beta,
+    const GemmConfig& cfg,
+    cudaStream_t stream = nullptr
+);
+
+// Batched GEMM: C[i] = A[i] @ B[i]
+void launch_batched_gemm(
+    const void** A, const void** B, void** C,
+    int batch, int M, int N, int K,
+    float alpha, float beta,
+    const GemmConfig& cfg,
+    cudaStream_t stream = nullptr
+);
+
+}} // namespace blackwell::kernels
