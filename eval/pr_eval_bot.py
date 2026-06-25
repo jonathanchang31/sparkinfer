@@ -104,7 +104,22 @@ FLAG_FILE = os.path.join(ROOT, ".github", "FLAGGED.md")
 COPYCAT_LABEL = "copycat"
 COPYCAT_LOG = os.path.join(ROOT, ".github", "copycats.json")
 COPYCAT_CONTAINMENT = 0.80   # ≥80% of the copy's added lines also appear in the original
-COPYCAT_STRIKES = 2          # this many copycats by one author -> denylist
+COPYCAT_STRIKES = 2          # this many copycats by one author -> denylist (permanent block)
+PENALTY_DAYS = 5             # every copycat strike freezes the author's evals for this long
+PENALTY_LABEL = "penalty"    # applied to a penalized author's PRs instead of greenlighting them
+
+def author_penalty_until(author):
+    """If `author` has a copycat strike within PENALTY_DAYS, return the date the penalty lifts
+    (latest strike + PENALTY_DAYS), else None. Applies from the FIRST strike onward."""
+    if not author: return None
+    dates = []
+    for e in load_copycat_log():
+        if str(e.get("author", "")).lower() == author.lower():
+            try: dates.append(datetime.date.fromisoformat(e["date"]))
+            except Exception: pass
+    if not dates: return None
+    until = max(dates) + datetime.timedelta(days=PENALTY_DAYS)
+    return until if datetime.date.today() <= until else None
 
 def pr_fingerprint(repo, num):
     """(changed files, normalized non-empty added lines) from the PR's unified diff."""
@@ -393,6 +408,19 @@ def main():
         if not args.dry_run: apply_area_labels(args.repo, num, areas)
         if oid in evaluated_commits(args.repo, num):
             print(f"PR #{num} @ {oid}: already evaluated — skip eval"); continue
+        # Gate 2.5 — copycat penalty: a copycat strike freezes the author's evaluations for
+        # PENALTY_DAYS (from the first strike). During the window the bot does NOT greenlight any of
+        # their PRs — it applies `penalty` and skips, instead of `test-on-5090`.
+        pen_until = author_penalty_until(pr_author.get(num, "?"))
+        if pen_until:
+            print(f"PR #{num}: author {pr_author.get(num,'?')} under copycat penalty until {pen_until} "
+                  f"— {PENALTY_LABEL}, skip eval")
+            if not args.dry_run:
+                cur = {l["name"] for l in pr.get("labels", [])}
+                if PENALTY_LABEL not in cur: add_label(args.repo, num, PENALTY_LABEL)
+                for L in (EVAL_GATE_LABEL, NOT_TESTED_LABEL, NEEDS_BENCH_LABEL):
+                    if L in cur: remove_label(args.repo, num, L)
+            continue
         # Gate 3 — greenlight (proof-gated): evaluate only if the PR ticks the RTX-5090 box AND
         # fills the decode before/after table with a real improvement (or a maintainer set force-eval).
         # Reconcile labels each poll so a stale test-on-5090 can't keep a no-benchmark PR in the queue.

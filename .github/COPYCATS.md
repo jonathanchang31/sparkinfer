@@ -14,6 +14,10 @@ one) to farm credit for someone else's work. The eval bot detects and records th
   copies while leaving genuinely different fixes of the same bug alone.
 - A copycat is labeled [`copycat`](../../labels/copycat), commented (citing the original PR), and
   **not evaluated or scored**.
+- **First strike → 5-day eval penalty.** From the *first* copycat, the author is frozen for **5
+  days**: during the window the bot will **not** greenlight or evaluate *any* of their PRs — it
+  applies a [`penalty`](../../labels/penalty) label and skips them (already-scored PRs keep their
+  result). The window runs 5 days from the most recent strike.
 - **Two strikes → block.** The 2nd copycat by the same author auto-adds them to
   [`blocked-contributors.txt`](./blocked-contributors.txt) with a reason (logged in
   [`FLAGGED.md`](./FLAGGED.md)); from then on their PRs are auto-closed and never evaluated.
