@@ -3,6 +3,67 @@
 Notable changes to sparkinfer. Format loosely follows [Keep a Changelog](https://keepachangelog.com);
 versions track the GitHub [releases](https://github.com/gittensor-ai-lab/sparkinfer/releases).
 
+## [0.3.0] — 2026-06-28
+
+The milestone release: sparkinfer's CUDA kernels **overtake llama.cpp** on Qwen3-MoE single-stream
+decode — at the **kernel level**, same model, same Q4_K_M precision, same greedy `bs=1` decode. No
+speculative decoding (EAGLE-3 / Medusa), no draft model, no flash-decoding accuracy trade — just
+faster kernels. Plus the first **production-readiness** feature: a thermal-safe inference governor.
+
+### Performance — RTX 5090 frontier 313.14 → 388.68 tok/s (+24%)
+Four verified kernel optimizations merged (top-1 0.95–0.98 vs llama.cpp, KL ≈ 0.145):
+- **#71** — int8 dp4a MMVQ for the Q4_K MoE down projection → 333.75 (@Dexterity104)
+- **#74** — split-K MMVQ down for M-tier decode occupancy → 339.59 (@jaso0n0818)
+- **#76** — fuse per-head Q/K-norm + Q/K rope into single kernels → 371.27 (@James-CUDA)
+- **#73** — skip the unused per-expert token-count pass in single-token decode → 388.68 (@Dexterity104)
+
+### 🏁 First to beat llama.cpp — at the kernel level
+Same RTX 5090, same Qwen3-30B-A3B Q4_K_M GGUF, head-to-head vs `llama-bench`, warm & controlled:
+
+| decode length | sparkinfer | llama.cpp |   |
+|---|---|---|---|
+| **128 tok** | **388.7** | 372.0 | **+4.5%** |
+| 256 tok | 381.5 | 371.7 | +2.6% |
+| 512 tok | 367.3 | 368.6 | ~parity |
+
+A **genuine kernel win** — identical weights, precision, and greedy single-stream decode; the
+speedup lives in the CUDA kernels (fused quantized MoE FFN, int8 dp4a MMVQ across every decode GEMV,
+split-K occupancy, fused attention norms), **not** in algorithmic shortcuts. The lead is largest at
+short generations and narrows to parity at long context — the per-token attention/KV path is the
+next frontier.
+
+### Added — production-readiness: thermal-safe inference (#77, @ai-hpc)
+- **`ThermalGovernor`** — a DVFS-style decode governor that throttles **throughput** when the GPU
+  runs hot (turbo / balanced / safe / emergency tiers, predictive), **preserving correctness
+  exactly**: it only paces token emission and never touches weights, precision, logits, or sampling,
+  so output is **bit-identical** to an un-paced run. Opt-in; zero overhead when off. Forcing the
+  tiers on a real RTX 5090 traded throughput for power **309 W → 87 W (3.5×)** with *identical token
+  ids* across every mode.
+- **GPU observability** — engine-level `query_gpu_stats()` / `Runtime::gpu_stats()` (heat, VRAM,
+  power, SM clock via NVML, mapped to the CUDA device by PCI bus id).
+
+### Changed — evaluation hardened against thermal & caching effects
+- **Warm-up before the baseline.** The from-source build leaves the GPU idle for minutes, so the
+  first timed build (the same-box baseline) was read on **cold clocks** and inflated every PR's
+  delta. The bench now spins clocks to boost before timing.
+- **Fresh same-box baseline on reused boxes.** The baseline checkout ran `git fetch origin origin/main`
+  — which silently fails (the branch is `main`) — and on a **reused** box left a *stale* checkout, so
+  it built **pre-merge** code and a just-merged gain was double-counted into the next PRs. Now it
+  fetches the real branch and checks out `FETCH_HEAD` (guaranteed fresh).
+- **Baseline sanity guard.** A run aborts if the same-box `main` baseline reads < 90 % of the known
+  frontier (cold / throttling / degraded box) instead of grading against a bogus-low baseline.
+
+### Verified
+- **RTX 5090** frontier **388.68 tok/s** (128-tok decode), top-1 **0.98** vs llama.cpp (KL ≈ 0.145),
+  **21.4 GB** resident — **+4.5 % over llama.cpp** at 128-tok, ~parity at 512-tok. Same-box, warm,
+  llama-anchored, controlled measurement.
+
+### Contributors
+- **@Dexterity104** — #71 (int8 dp4a Q4_K MoE down), #73 (skip per-expert token count)
+- **@jaso0n0818** — #74 (split-K MMVQ down)
+- **@James-CUDA** — #76 (fuse Q/K-norm + Q/K rope)
+- **@ai-hpc** — #77 (thermal governor + GPU observability)
+
 ## [0.2.3] — 2026-06-26
 
 A performance jump **and** a fairer, more trustworthy evaluation: every PR is now measured against
