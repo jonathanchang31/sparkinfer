@@ -83,6 +83,19 @@ window.SPARKINFER = {
   ],
   "prs": [
     {
+      "num": 75,
+      "title": "perf(moe): software-pipeline the int8 MoE down decode (+4% decode on RTX 5090)",
+      "areas": [
+        "kernels"
+      ],
+      "label": "S",
+      "tps": 334.58,
+      "delta_pct": 4.3,
+      "top1": 0.98,
+      "kl": 0.1502,
+      "url": "https://github.com/gittensor-ai-lab/sparkinfer/pull/75"
+    },
+    {
       "num": 74,
       "title": "perf(moe): split-K MMVQ down — +8% Qwen3-MoE decode on RTX 5090",
       "areas": [
