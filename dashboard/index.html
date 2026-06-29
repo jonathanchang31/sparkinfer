@@ -200,7 +200,7 @@
 
   <section>
     <div class="sec-h"><h2>Evaluated PRs</h2><span class="hint">bot labels + comments · never auto-merges</span></div>
-    <div class="card"><table><thead><tr><th>PR</th><th>area</th><th>label</th><th>decode</th><th>vs frontier</th></tr></thead><tbody id="prs"></tbody></table></div>
+    <div class="card"><table><thead><tr><th>PR</th><th>area</th><th>label</th><th>decode</th><th>vs frontier</th><th>proof</th></tr></thead><tbody id="prs"></tbody></table></div>
   </section>
 
   <footer>
@@ -279,9 +279,10 @@
   $("prs").innerHTML = D.prs.length ? D.prs.map(p=>`
     <tr><td><a href="${p.url||'#'}">#${p.num}</a> ${p.title||''}</td>
     <td>${(p.areas||[]).map(a=>`<span class="area">${a}</span>`).join("")||"—"}</td>
-    <td><span class="tag" style="background:${lc[p.label]||'#888'}">${p.label}</span>${p.proof_url?` <a href="${p.proof_url}" target="_blank" title="verifiable eval log" style="font-size:11px;text-decoration:none">🔒</a>`:""}</td>
-    <td>${p.tps??"—"}</td><td>${p.delta_pct!=null?(p.delta_pct>0?"+":"")+p.delta_pct+"%":"—"}</td></tr>`).join("")
-    : `<tr><td colspan="5" class="empty">No PRs evaluated yet — open one and the bot posts an <code>eval:&lt;label&gt;</code> within ~30 min.</td></tr>`;
+    <td><span class="tag" style="background:${lc[p.label]||'#888'}">${p.label}</span></td>
+    <td>${p.tps??"—"}</td><td>${p.delta_pct!=null?(p.delta_pct>0?"+":"")+p.delta_pct+"%":"—"}</td>
+    <td>${p.proof_url?`<a href="${p.proof_url}" target="_blank" title="verifiable eval log">🔒 log</a>`:"—"}</td></tr>`).join("")
+    : `<tr><td colspan="6" class="empty">No PRs evaluated yet — open one and the bot posts an <code>eval:&lt;label&gt;</code> within ~30 min.</td></tr>`;
 </script>
 </body>
 </html>
