@@ -1,6 +1,6 @@
 ![sparkinfer banner](docs/sparkinfer.png)
 
-# SP⚡RKINFER
+# _SP⚡RKINFER_
 
 **Fastest MoE/LLM inference runtime for consumer and edge Blackwell GPUs.**
 
