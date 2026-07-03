@@ -120,6 +120,20 @@
   .cmp-dot{width:10px;height:10px;border-radius:3px;display:inline-block;flex:0 0 auto}
   .cmp-val{font-family:"Sora";font-weight:800;color:var(--title);font-size:24px;margin-top:4px;line-height:1}
   .cmp-val span{font-size:12px;color:var(--muted);font-weight:600}
+  .cmp-bars{margin-top:18px;padding-top:18px;border-top:1px solid var(--line);display:grid;gap:14px}
+  .cmp-bar-row{display:grid;grid-template-columns:128px 1fr 86px;gap:14px;align-items:center}
+  .cmp-bar-label{min-width:0}
+  .cmp-bar-title{font-family:"Sora";font-weight:800;color:var(--title);font-size:13px;line-height:1.2}
+  .cmp-bar-sub{font-size:11.5px;color:var(--muted);margin-top:3px}
+  .cmp-bar-stack{display:grid;gap:6px;min-width:0}
+  .cmp-bar-line{display:grid;grid-template-columns:78px 1fr 72px;gap:9px;align-items:center}
+  .cmp-bar-name{font-size:11.5px;color:var(--muted);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cmp-bar-track{height:12px;background:#eceaf5;border-radius:999px;overflow:hidden}
+  .cmp-bar-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--theme),#a78bff)}
+  .cmp-bar-fill.ref{background:linear-gradient(90deg,#2a2540,#555)}
+  .cmp-bar-val{text-align:right;font-family:"Sora";font-size:12px;font-weight:800;color:var(--title)}
+  .cmp-bar-delta{text-align:right;font-family:"Sora";font-size:15px;font-weight:800;color:var(--theme)}
+  .cmp-bar-delta.neg{color:var(--bad)}
 
   /* labels legend */
   .legend{display:flex;flex-wrap:wrap;gap:10px}
@@ -140,7 +154,7 @@
   .f-brand{font-family:"Sora",sans-serif;font-weight:700;color:var(--title)}
   .f-brand b{color:var(--theme)}
   .f-sep{color:var(--line)}
-  @media(max-width:820px){.kpis{grid-template-columns:1fr 1fr}.grid2,.anchor-grid{grid-template-columns:1fr}.cmp-grid{grid-template-columns:1fr 1fr}.hero h1{font-size:32px}.bar-row{grid-template-columns:110px 1fr 56px}}
+  @media(max-width:820px){.kpis{grid-template-columns:1fr 1fr}.grid2,.anchor-grid{grid-template-columns:1fr}.cmp-grid{grid-template-columns:1fr 1fr}.cmp-bar-row{grid-template-columns:1fr}.cmp-bar-delta{text-align:left}.hero h1{font-size:32px}.bar-row{grid-template-columns:110px 1fr 56px}}
   @media(max-width:560px){.cmp-grid{grid-template-columns:1fr}}
 </style>
 </head>
@@ -301,10 +315,11 @@
       `</div>`;
   })();
 
-  const ctxRows = (D.context_baselines||[]);
+  const ctxRows = (D.context_baselines||[]).filter(x=>x.sparkinfer_tps && x.llamacpp_decode_tps);
+  const ctxMax = Math.max(1, ...ctxRows.flatMap(x=>[x.sparkinfer_tps, x.llamacpp_decode_tps]));
   const ctxHtml = ctxRows.length ? `
     <div class="cmp-grid">
-      ${ctxRows.filter(x=>x.sparkinfer_tps && x.llamacpp_decode_tps).map(x=>{
+      ${ctxRows.map(x=>{
         const d=100*(x.sparkinfer_tps-x.llamacpp_decode_tps)/x.llamacpp_decode_tps;
         const title=x.ctx===128 ? "128-token decode" : `${x.label}-context decode`;
         const sub=x.ctx===128 ? "no prefill context" : "128 generated tokens";
@@ -321,6 +336,34 @@
             <div class="cmp-name"><span class="cmp-dot" style="background:#2a2540"></span>${s.ref_name} <span style="text-transform:none;letter-spacing:0;font-weight:500">baseline</span></div>
             <div class="cmp-val">${x.llamacpp_decode_tps} <span>tok/s</span></div>
           </div>
+        </div>`
+      }).join("")}
+    </div>
+    <div class="cmp-bars">
+      ${ctxRows.map(x=>{
+        const d=100*(x.sparkinfer_tps-x.llamacpp_decode_tps)/x.llamacpp_decode_tps;
+        const title=x.ctx===128 ? "128-token decode" : `${x.label}-context decode`;
+        const sub=x.ctx===128 ? "no prefill context" : "128 generated tokens";
+        const spW=Math.max(3, 100*x.sparkinfer_tps/ctxMax);
+        const refW=Math.max(3, 100*x.llamacpp_decode_tps/ctxMax);
+        return `<div class="cmp-bar-row">
+          <div class="cmp-bar-label">
+            <div class="cmp-bar-title">${title}</div>
+            <div class="cmp-bar-sub">${sub}</div>
+          </div>
+          <div class="cmp-bar-stack">
+            <div class="cmp-bar-line">
+              <div class="cmp-bar-name">sparkinfer</div>
+              <div class="cmp-bar-track"><div class="cmp-bar-fill" style="width:${spW}%"></div></div>
+              <div class="cmp-bar-val">${x.sparkinfer_tps}</div>
+            </div>
+            <div class="cmp-bar-line">
+              <div class="cmp-bar-name">${s.ref_name}</div>
+              <div class="cmp-bar-track"><div class="cmp-bar-fill ref" style="width:${refW}%"></div></div>
+              <div class="cmp-bar-val">${x.llamacpp_decode_tps}</div>
+            </div>
+          </div>
+          <div class="cmp-bar-delta ${d<0?'neg':''}">${d>=0?'+':''}${d.toFixed(1)}%</div>
         </div>`
       }).join("")}
     </div>
