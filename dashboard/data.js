@@ -128,6 +128,51 @@ window.SPARKINFER = {
   ],
   "prs": [
     {
+      "num": 221,
+      "title": "perf(attn): trim int8 mma flash-decode shared round-trips + raise occupancy to 5 blocks/SM (+4.7% at 16k)",
+      "areas": [
+        "kernels"
+      ],
+      "label": "XL",
+      "tps": 327.46,
+      "delta_pct": 6.3,
+      "top1": 0.9426,
+      "kl": 0.0368,
+      "url": "https://github.com/gittensor-ai-lab/sparkinfer/pull/221",
+      "eval_mode": "longctx",
+      "score_context": 16384,
+      "best_context_label": "16k-context",
+      "context_gains_pct": {
+        "128-context": -0.15,
+        "512-context": -0.19,
+        "4k-context": -0.16,
+        "16k-context": 6.28,
+        "32k-context": 4.46
+      },
+      "regression_labels": [],
+      "ctx_128_tps": 495.55,
+      "ctx_512_tps": 470.28,
+      "ctx_4096_tps": 393.39,
+      "ctx_16384_tps": 327.46,
+      "ctx_32768_tps": 260.3,
+      "guard_128_baseline": 496.27,
+      "guard_128_ratio": 0.9985,
+      "guard_128_pass": true,
+      "guard_512_baseline": 471.18,
+      "guard_512_ratio": 0.9981,
+      "guard_512_pass": true,
+      "guard_4k_baseline": 394.02,
+      "guard_4k_ratio": 0.9984,
+      "guard_4k_pass": true,
+      "guard_16k_baseline": 308.11,
+      "guard_16k_ratio": 1.0628,
+      "guard_16k_pass": true,
+      "guard_32k_baseline": 249.18,
+      "guard_32k_ratio": 1.0446,
+      "guard_32k_pass": true,
+      "proof_url": "https://gittensor-ai-lab.github.io/sparkinfer-log/?run=0221-5f2c6e4"
+    },
+    {
       "num": 195,
       "title": "perf(attn): int8 KV tensor-core GQA flash-decode (+19% decode at 16k)",
       "areas": [
@@ -999,17 +1044,6 @@ window.SPARKINFER = {
       "tps": 197.22,
       "delta_pct": 5.1,
       "url": "https://github.com/gittensor-ai-lab/sparkinfer/pull/44"
-    },
-    {
-      "num": 43,
-      "title": "perf(kernels): vectorized K/V loads in flash_decode_split (hd=128)",
-      "areas": [
-        "kernels"
-      ],
-      "label": "none",
-      "tps": 187.96,
-      "delta_pct": null,
-      "url": "https://github.com/gittensor-ai-lab/sparkinfer/pull/43"
     }
   ],
   "landed": [
