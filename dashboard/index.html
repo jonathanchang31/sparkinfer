@@ -241,6 +241,16 @@
   </section>
 
   <section>
+    <div class="sec-h"><h2>Qwen3-MoE · per-context</h2><span class="hint">sparkinfer vs llama.cpp · 128 / 512 / 4k / 16k / 32k</span></div>
+    <div class="card" id="detail-q3"></div>
+  </section>
+
+  <section>
+    <div class="sec-h"><h2>Qwen3.6 · per-context</h2><span class="hint">sparkinfer vs llama.cpp · 128 / 512 / 4k</span></div>
+    <div class="card" id="detail-q36"></div>
+  </section>
+
+  <section>
     <div class="sec-h"><h2>Auto-eval labels</h2><span class="hint">deterministic — from verified speedup over same-box main</span></div>
     <div class="card"><div class="legend" id="labels"></div></div>
   </section>
@@ -370,6 +380,50 @@
         </div>
       </div>
       <div class="ctx-note">128-token decode · same RTX 5090 · same GPU · same GGUF</div>`;
+  })();
+
+  // Qwen3-MoE per-context detail: 128 / 512 / 4k / 16k / 32k bars vs llama.cpp
+  (function(){
+    const rows = (D.context_baselines||[]).filter(x=>x.sparkinfer_tps && x.llamacpp_decode_tps);
+    if (!rows.length) return;
+    const maxT = Math.max(...rows.flatMap(x=>[x.sparkinfer_tps, x.llamacpp_decode_tps]));
+    const fmt=v=>v.toFixed(2); const bar=v=>Math.max(3, 100*v/maxT);
+    const detailRows = rows.map(x=>{
+      const d=100*(x.sparkinfer_tps-x.llamacpp_decode_tps)/x.llamacpp_decode_tps;
+      return `<div class="bar-row">
+        <div class="nm">${x.ctx===128?"128":x.ctx===512?"512":x.ctx===4096?"4k":x.ctx===16384?"16k":"32k"}<small>${x.ctx===128?"no prefill":"128 gen tok"}</small></div>
+        <div class="track"><div class="fill" style="width:${bar(x.sparkinfer_tps)}%;background:linear-gradient(90deg,${x.color},${x.color}88)"></div></div>
+        <div class="v" style="font-size:12px;color:var(--body);margin-left:8px">${fmt(x.sparkinfer_tps)}</div>
+      </div>
+      <div class="bar-row">
+        <div class="nm">llama.cpp</div>
+        <div class="track"><div class="fill them" style="width:${bar(x.llamacpp_decode_tps)}%"></div></div>
+        <div class="v" style="font-size:12px;color:var(--body);margin-left:8px">${fmt(x.llamacpp_decode_tps)} <span style="color:${d>=0?'var(--ok)':'var(--bad)'};font-weight:700;font-size:13px">${d>=0?'+':''}${d.toFixed(1)}%</span></div>
+      </div>`
+    }).join("");
+    $("detail-q3").innerHTML = `${detailRows}<div class="ctx-note" style="margin-top:12px">sparkinfer vs llama.cpp · same GPU · same Qwen3-30B Q4_K_M GGUF</div>`;
+  })();
+
+  // Qwen3.6 per-context detail: 128 / 512 / 4k bars vs llama.cpp
+  (function(){
+    const rows = (D.qwen36?.ctx||[]).filter(x=>x.tps && x.ref_tps);
+    if (!rows.length) return;
+    const maxT = Math.max(...rows.flatMap(x=>[x.tps, x.ref_tps]));
+    const fmt=v=>v.toFixed(2); const bar=v=>Math.max(3, 100*v/maxT);
+    const detailRows = rows.map(x=>{
+      const d=100*(x.tps-x.ref_tps)/x.ref_tps;
+      return `<div class="bar-row">
+        <div class="nm">${x.label==="128"?"128":x.ctx===512?"512":"4k"}<small>${x.label==="128"?"no prefill":"128 gen tok"}</small></div>
+        <div class="track"><div class="fill" style="width:${bar(x.tps)}%;background:linear-gradient(90deg,${x.color},${x.color}88)"></div></div>
+        <div class="v" style="font-size:12px;color:var(--body);margin-left:8px">${fmt(x.tps)}</div>
+      </div>
+      <div class="bar-row">
+        <div class="nm">llama.cpp</div>
+        <div class="track"><div class="fill them" style="width:${bar(x.ref_tps)}%"></div></div>
+        <div class="v" style="font-size:12px;color:var(--body);margin-left:8px">${fmt(x.ref_tps)} <span style="color:var(--bad);font-weight:700;font-size:13px">${d.toFixed(1)}%</span></div>
+      </div>`
+    }).join("");
+    $("detail-q36").innerHTML = `${detailRows}<div class="ctx-note" style="margin-top:12px">sparkinfer vs llama.cpp · same GPU · same Qwen3.6-35B-A3B UD-Q4_K_M GGUF</div>`;
   })();
 
   $("labels").innerHTML = D.labels.map(x=>`<span class="lg"><span class="dot" style="background:${x.c}"></span><b style="color:var(--title)">${x.l}</b> — ${x.d}</span>`).join("");
