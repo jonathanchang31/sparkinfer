@@ -138,6 +138,54 @@ window.SPARKINFER = {
   ],
   "prs": [
     {
+      "num": 318,
+      "title": "perf: quantized dense FFN + GDN fusions + hd256 32k combine",
+      "areas": [
+        "kernels",
+        "runtime"
+      ],
+      "label": "REJECT",
+      "tps": 363.07,
+      "delta_pct": null,
+      "top1": 0.4242,
+      "kl": 3.8672,
+      "url": "https://github.com/gittensor-ai-lab/sparkinfer/pull/318",
+      "model": "bidir",
+      "eval_mode": "longctx",
+      "score_context": 32768,
+      "best_context_label": "32k-context",
+      "context_gains_pct": {
+        "128-context": -1.22,
+        "512-context": -0.85,
+        "4k-context": -0.79,
+        "16k-context": -0.16,
+        "32k-context": -0.15
+      },
+      "regression_labels": [],
+      "ctx_128_tps": 421.3,
+      "ctx_512_tps": 416.26,
+      "ctx_4096_tps": 399.81,
+      "ctx_16384_tps": 385.02,
+      "ctx_32768_tps": 363.07,
+      "guard_128_baseline": 426.5,
+      "guard_128_ratio": 0.9878,
+      "guard_128_pass": true,
+      "guard_512_baseline": 419.81,
+      "guard_512_ratio": 0.9915,
+      "guard_512_pass": true,
+      "guard_4k_baseline": 403.0,
+      "guard_4k_ratio": 0.9921,
+      "guard_4k_pass": true,
+      "guard_16k_baseline": 385.65,
+      "guard_16k_ratio": 0.9984,
+      "guard_16k_pass": true,
+      "guard_32k_baseline": 363.62,
+      "guard_32k_ratio": 0.9985,
+      "guard_32k_pass": true,
+      "proof_url": "https://gittensor-ai-lab.github.io/sparkinfer-log/?run=0318-560345c",
+      "proof_run": "0318-560345c"
+    },
+    {
       "num": 294,
       "title": "perf: Qwen3.6 +36 tok/s @12k, Qwythos 264 tok/s (beats llama.cpp 225)",
       "areas": [
@@ -1600,21 +1648,6 @@ window.SPARKINFER = {
       "kl": 0.1417,
       "url": "https://github.com/gittensor-ai-lab/sparkinfer/pull/87",
       "proof_url": "https://gittensor-ai-lab.github.io/sparkinfer-log/?run=0087-b7562da"
-    },
-    {
-      "num": 86,
-      "title": "perf(decode): single-pass MoE top-k + fused RoPE/KV-append (+3.2% decode)",
-      "areas": [
-        "kernels",
-        "runtime"
-      ],
-      "label": "S",
-      "tps": 454.41,
-      "delta_pct": 4.2,
-      "top1": 0.97,
-      "kl": 0.1417,
-      "url": "https://github.com/gittensor-ai-lab/sparkinfer/pull/86",
-      "proof_url": "https://gittensor-ai-lab.github.io/sparkinfer-log/?run=0086-4e45ed9"
     }
   ],
   "landed": [
