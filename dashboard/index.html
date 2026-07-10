@@ -109,6 +109,7 @@
   .ctx-title span{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:7px}
   .ctx-note{margin-top:12px;text-align:center;color:var(--muted);font-size:13px}
   .cmp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+  .cmp-grid-3{grid-template-columns:repeat(3,1fr)}
   .cmp-card{border:1px solid var(--line);border-radius:12px;padding:16px;background:#fbfbfd;display:flex;flex-direction:column;gap:13px;min-width:0}
   .cmp-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
   .cmp-title{font-family:"Sora";font-weight:800;color:var(--title);font-size:14px;line-height:1.15}
@@ -130,7 +131,7 @@
   .cmp-bar-name{font-size:11.5px;color:var(--muted);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .cmp-bar-track{height:12px;background:#eceaf5;border-radius:999px;overflow:hidden}
   .cmp-bar-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--theme),#a78bff)}
-  .cmp-bar-fill.ref{background:linear-gradient(90deg,#0c0a18,#1a1a2e)}
+  .cmp-bar-fill.ref{background:linear-gradient(90deg,#A9A9B4,#C8C8D4)}
   .cmp-bar-val{text-align:right;font-family:"Sora";font-size:12px;font-weight:800;color:var(--title)}
   .cmp-bar-delta{text-align:right;font-family:"Sora";font-size:15px;font-weight:800;color:var(--theme)}
   .cmp-bar-delta.neg{color:var(--bad)}
@@ -154,7 +155,7 @@
   .f-brand{font-family:"Sora",sans-serif;font-weight:700;color:var(--title)}
   .f-brand b{color:var(--theme)}
   .f-sep{color:var(--line)}
-  @media(max-width:820px){.kpis{grid-template-columns:1fr 1fr}.grid2,.anchor-grid{grid-template-columns:1fr}.cmp-grid{grid-template-columns:1fr 1fr}.cmp-bar-row{grid-template-columns:1fr}.cmp-bar-delta{text-align:left}.hero h1{font-size:32px}.bar-row{grid-template-columns:110px 1fr 56px}}
+  @media(max-width:820px){.kpis{grid-template-columns:1fr 1fr}.grid2,.anchor-grid{grid-template-columns:1fr}.cmp-grid,.cmp-grid-3{grid-template-columns:1fr}.cmp-bar-row{grid-template-columns:1fr}.cmp-bar-delta{text-align:left}.hero h1{font-size:32px}.bar-row{grid-template-columns:110px 1fr 56px}}
   @media(max-width:560px){.cmp-grid{grid-template-columns:1fr}}
 </style>
 </head>
@@ -368,10 +369,8 @@
       pts.push({name:"llama.cpp", sub:"reference · 128-tok decode", tps:q.ref_tps, llama:true, fixed:true});
     }
     drawJourney("passes35", pts,
-      legWrap(legItem("#FF6B35","Qwen3.5 · Qwythos-9B")+
-              legItem("#D14D72","origin/main baseline")+
-              legItem("#0E8A16","landed / eval frontier · RTX 5090")+
-              legItem("#A9A9B4","llama.cpp reference")));
+      legWrap(legItem("#D14D72","origin/main baseline")+
+              legItem("#0E8A16","landed / eval frontier · RTX 5090")));
   })();
   // Qwen3.6 journey — its own frontier (hybrid Gated-DeltaNet MoE, scored 128/512/4k).
   (function(){
@@ -384,37 +383,51 @@
       legItem("#0E8A16","landed / eval frontier · RTX 5090")));
   })();
 
-  // sparkinfer vs llama.cpp — three-model comparison bar chart (128-token decode)
+  // sparkinfer vs llama.cpp — three-model comparison (128-token decode, per-model scale)
   (function(){
-    const q3 = (D.context_baselines||[]).find(x=>x.ctx===128);
-    const q35 = (D.qwen35?.ctx||[]).find(x=>x.label==="128");
-    const q36 = (D.qwen36?.ctx||[]).find(x=>x.label==="128");
-    if (!q3 && !q35 && !q36) return;
-    const q3sp = q3?.sparkinfer_tps || 0, q3ll = q3?.llamacpp_decode_tps || 0;
-    const q35sp = q35?.tps || 0, q35ll = q35?.ref_tps || 0;
-    const q36sp = q36?.tps || 0, q36ll = q36?.ref_tps || 0;
+    const C128 = ctxColor(128);
+    const models = [
+      {key:"q3", title:"Qwen3-MoE 30B-A3B", sub:"Q4_K_M · 128-tok decode",
+       sp:(D.context_baselines||[]).find(x=>x.ctx===128)?.sparkinfer_tps||0,
+       ll:(D.context_baselines||[]).find(x=>x.ctx===128)?.llamacpp_decode_tps||0},
+      {key:"q35", title:"Qwen3.5 9B", sub:"Qwythos · Q4_K_M · 128-tok decode",
+       sp:(D.qwen35?.ctx||[]).find(x=>x.label==="128")?.tps||0,
+       ll:(D.qwen35?.ctx||[]).find(x=>x.label==="128")?.ref_tps||0},
+      {key:"q36", title:"Qwen3.6 35B-A3B", sub:"UD-Q4_K_M · 128-tok decode",
+       sp:(D.qwen36?.ctx||[]).find(x=>x.label==="128")?.tps||0,
+       ll:(D.qwen36?.ctx||[]).find(x=>x.label==="128")?.ref_tps||0},
+    ].filter(m=>m.sp>0||m.ll>0);
+    if (!models.length) return;
     const pct = (sp,ll)=> ll>0 && sp>0 ? 100*(sp-ll)/ll : null;
-    const d3 = pct(q3sp,q3ll), d35 = pct(q35sp,q35ll), d36 = pct(q36sp,q36ll);
-    const maxTPS = Math.max(q3sp, q3ll, q35sp, q35ll, q36sp, q36ll, 1);
-    const bar = (v)=>Math.max(3, 100*v/maxTPS);
-    const fmt = (v)=>v>0?v.toFixed(2):"pending";
-    const col = (title, color, sp, ll, d) => `
-        <div style="flex:1;min-width:280px">
-          <div style="font-family:Sora;font-weight:700;font-size:16px;color:var(--title);margin-bottom:14px">
-            <span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${color};margin-right:8px"></span>
-            ${title}
-            ${d!=null?`<span style="font-weight:600;font-size:14px;color:${d>=0?'var(--ok)':'var(--bad)'};margin-left:10px">${d>=0?'+':''}${d.toFixed(1)}%</span>`:''}
+    const card = m=>{
+      const d=pct(m.sp,m.ll), max=Math.max(m.sp,m.ll,1);
+      const bar=v=>Math.max(4,100*v/max);
+      const fmt=v=>v>0?v.toFixed(2):"—";
+      return `<div class="cmp-card">
+        <div class="cmp-top">
+          <div>
+            <div class="cmp-title"><span class="cmp-dot" style="background:${C128}"></span>${m.title}</div>
+            <div class="cmp-sub">${m.sub}</div>
           </div>
-          <div class="bar-row"><div class="nm">sparkinfer</div><div class="track"><div class="fill" style="width:${sp>0?bar(sp):0}%;background:linear-gradient(90deg,${color},${color}88)"></div></div><div class="v">${fmt(sp)}</div></div>
-          <div class="bar-row"><div class="nm">llama.cpp</div><div class="track"><div class="fill them" style="width:${bar(ll)}%;background:${LLAMA_FILL}"></div></div><div class="v">${fmt(ll)}</div></div>
-        </div>`;
-    $("vsllama").innerHTML = `
-      <div style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:18px">
-        ${q3?col("Qwen3-MoE 30B-A3B · Q4_K_M","#D14D72",q3sp,q3ll,d3):""}
-        ${q35?col("Qwen3.5 9B · Q4_K_M","#FF6B35",q35sp,q35ll,d35):""}
-        ${q36?col("Qwen3.6 35B-A3B · UD-Q4_K_M","#7B5DFF",q36sp,q36ll,d36):""}
-      </div>
-      <div class="ctx-note">128-token decode · same RTX 5090 · same GPU · same GGUF</div>`;
+          ${d!=null?`<div class="cmp-delta${d<0?' neg':''}">${d>=0?'+':''}${d.toFixed(1)}%</div>`:''}
+        </div>
+        <div class="cmp-bars" style="margin-top:0;padding-top:0;border-top:0">
+          <div class="cmp-bar-line">
+            <div class="cmp-bar-name">sparkinfer</div>
+            <div class="cmp-bar-track"><div class="cmp-bar-fill" style="width:${bar(m.sp)}%;background:linear-gradient(90deg,${C128},${C128}88)"></div></div>
+            <div class="cmp-bar-val">${fmt(m.sp)}</div>
+          </div>
+          <div class="cmp-bar-line">
+            <div class="cmp-bar-name">llama.cpp</div>
+            <div class="cmp-bar-track"><div class="cmp-bar-fill ref" style="width:${bar(m.ll)}%;background:${LLAMA_FILL}"></div></div>
+            <div class="cmp-bar-val">${fmt(m.ll)}</div>
+          </div>
+        </div>
+      </div>`;
+    };
+    $("vsllama").innerHTML =
+      `<div class="cmp-grid cmp-grid-3">${models.map(card).join("")}</div>`+
+      `<div class="ctx-note">128-token decode · same RTX 5090 · same GPU · same GGUF</div>`;
   })();
 
   // Qwen3-MoE per-context detail: 128 / 512 / 4k / 16k / 32k bars vs llama.cpp
@@ -480,7 +493,7 @@
       <div class="bar-row">
         <div class="nm">llama.cpp</div>
         <div class="track"><div class="fill them" style="width:${bar(x.ref_tps)}%;background:${LLAMA_FILL}"></div></div>
-        <div class="v" style="font-size:12px;color:var(--body);margin-left:8px">${fmt(x.ref_tps)} <span style="color:var(--bad);font-weight:700;font-size:13px">${d.toFixed(1)}%</span></div>
+        <div class="v" style="font-size:12px;color:var(--body);margin-left:8px">${fmt(x.ref_tps)}${d!=null?` <span style="color:${d>=0?'var(--ok)':'var(--bad)'};font-weight:700;font-size:13px">${d>=0?'+':''}${d.toFixed(1)}%</span>`:''}</div>
       </div>`
     }).join("");
     $("detail-q36").innerHTML = `${detailRows}<div class="ctx-note" style="margin-top:12px">sparkinfer vs llama.cpp · same GPU · same Qwen3.6-35B-A3B UD-Q4_K_M GGUF</div>`;
